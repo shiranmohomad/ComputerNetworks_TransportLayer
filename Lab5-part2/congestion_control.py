@@ -235,6 +235,7 @@ class Receiver:
         return self._ready_data.get()
 
     def _recv(self):
+        slow_start = True  # Track whether slow start is active
         while True:
             # Receive data packet
             raw = self._ll_endpoint.recv()
@@ -275,6 +276,17 @@ class Receiver:
             ack = Packet(PacketType.ACK, self._last_ack_sent)
             self._ll_endpoint.send(ack.to_bytes())
             logging.debug("Sent: {}".format(ack))
+
+            # Logging for slow start
+            if slow_start:
+                logging.debug("Entering slow start. Congestion window size: {}".format(ack_num))
+            else:
+                logging.debug("Congestion avoidance phase. Congestion window size: {}".format(ack_num))
+
+            # Check if slow start has ended
+            if slow_start and ack_num >= 10:  # Adjust the threshold accordingly
+                slow_start = False
+                logging.debug("Exiting slow start. Congestion window size: {}".format(ack_num))
 
 class CwndPlotter:
     def __init__(self, refresh_rate=2):
