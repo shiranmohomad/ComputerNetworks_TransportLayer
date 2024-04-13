@@ -201,7 +201,7 @@ class Sender:
 
             # Update congestion window if using slow start
             if self._use_slow_start:
-                self._cwnd += 1  # Slow start: increment congestion window by 1 for each ACK
+                self._cwnd *= 2  # Slow start: increment congestion window by doubling for each ACK
             else:
                 self._cwnd = self._cwnd + 1 / self._cwnd  # AIMD
 
