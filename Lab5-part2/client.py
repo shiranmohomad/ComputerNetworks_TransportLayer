@@ -20,7 +20,7 @@ def main():
     arg_parser.add_argument('-d', '--delay', dest='delay', 
             action='store', type=float, default=1, help='Delay (secs)')
     arg_parser.add_argument('-s', '--slowstart', dest='use_slow_start', 
-            action='store_true', help='Enable slow start')
+            action='store_true', help='Enable slow start')  # Add this argument
     arg_parser.add_argument('-f', '--fastretransmit', dest='use_fast_retransmit', 
             action='store_true', help='Enable fast retransmit + fast retransmit')
     settings = arg_parser.parse_args()
@@ -30,7 +30,7 @@ def main():
 
     ll_endpoint = lower_layer.LowerLayerEndpoint(remote_address=(settings.hostname, settings.port),
                 queue_size=settings.queue_size, bandwidth=settings.bandwidth, propagation_delay=settings.delay) 
-    sender = congestion_control.Sender(ll_endpoint, settings.use_slow_start, settings.use_fast_retransmit)
+    sender = congestion_control.Sender(ll_endpoint, settings.use_slow_start, settings.use_fast_retransmit)  # Pass use_slow_start argument here
 
     for i in range(1, 4001):
         line = "Line%04d\n" % (i)
