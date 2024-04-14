@@ -166,10 +166,8 @@ class SWPSender:
                 with self._send_window_lock:
                     seq_num = packet.seq_num
                     if seq_num in self._send_window:
-                        # Packet acknowledged, cancel the timer and remove from the window
                         packet, timer = self._send_window.pop(seq_num)
                         timer.cancel()
-                        # Signal that acknowledgment is received
                         self._ack_received.set()
                     else:
                         logging.debug("Received acknowledgment for unknown sequence number %d" % seq_num)
@@ -206,16 +204,12 @@ class SWPReceiver:
                 with self._recv_lock:
                     seq_num = packet.seq_num
                     if seq_num == self._expected_seq_num:
-                        # Packet received in order, deliver to the application
                         self._ready_data.put(packet.data)
                         self._expected_seq_num += 1
-                        # Send ACK
                         self._send_ack(seq_num)
                     elif seq_num > self._expected_seq_num:
-                        # Packet received out of order, discard it
                         logging.debug("Out of order packet received. Expected sequence number: %d, Received: %d" % (self._expected_seq_num, seq_num))
                     else:
-                        # Packet already received, resend ACK
                         self._send_ack(seq_num)
             else:
                 logging.debug("Received non-data packet. Ignored.")
