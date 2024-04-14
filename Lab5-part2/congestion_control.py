@@ -201,8 +201,10 @@ class Sender:
 
             # Update congestion window if using slow start
             if self._use_slow_start:
+                logging.info("Slow start is Enabled!")
                 self._cwnd *= 2  # Slow start: increment congestion window by doubling for each ACK
             else:
+                logging.info("AIMD is Enabled!")
                 self._cwnd = self._cwnd + 1 / self._cwnd  # AIMD
 
             logging.debug("CWND: {}".format(self._cwnd))
@@ -211,6 +213,7 @@ class Sender:
             # Send next packet while packets are available and congestion window allows
             while  ((self._last_seq_sent < self._last_seq_written) and
                     (self._last_seq_sent - self._last_ack_recv < int(self._cwnd))):
+                logging.info("Transmitting Packets, Sequence Number :",_last_seq_sent + 1)
                 self._transmit(self._last_seq_sent + 1)
 
 class Receiver:
