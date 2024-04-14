@@ -132,19 +132,20 @@ class Sender:
             self._transmit(packet.seq_num)
         
     def _timeout(self):
-        # Update congestion window
-        self._cwnd = max(1, self._cwnd/2)
+        # Halve the congestion window (multiplicative decrease)
+        self._cwnd = max(1, self._cwnd // 2)  # Ensure cwnd is at least 1
         logging.debug("CWND: {}".format(self._cwnd))
         self._plotter.update_cwnd(self._cwnd)
 
-        # Assume no packets remain in flight
-        for seq_num in range(self._last_ack_recv+1, self._last_seq_sent+1):
+        # Reset send time for unacknowledged packets
+        for seq_num in range(self._last_ack_recv + 1, self._last_seq_sent + 1):
             slot = seq_num % Sender._BUF_SIZE
-            self._buf[slot]["send_time"] = 0 
-        self._last_seq_sent = self._last_ack_recv
+            self._buf[slot]["send_time"] = None
 
-        # Sent next unACK'd packet
-        self._transmit(self._last_ack_recv + 1)
+        # Resend the oldest unacknowledged packet
+        oldest_unacknowledged = self._last_ack_recv + 1
+        self._transmit(oldest_unacknowledged)
+
 
     def _recv(self):
         while (not self._shutdown) or (self._last_ack_recv < self._last_seq_sent):
@@ -198,6 +199,9 @@ class Sender:
                     elif self._dup_acks > Sender.DUPLICATE_ACK_THRESHOLD:
                         # Fast recovery: Increase congestion window for each duplicate ACK
                         self._cwnd += 1
+            else:
+                # Default behavior: AIMD (Additive Increase Multiplicative Decrease)
+                self._cwnd = self._cwnd + 1 / self._cwnd  # Increment congestion window for each ACK
 
             # Update congestion window if using slow start
             if self._use_slow_start:
