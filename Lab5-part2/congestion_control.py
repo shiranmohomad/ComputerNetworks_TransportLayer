@@ -134,7 +134,7 @@ class Sender:
     def _timeout(self):
         # Halve the congestion window (multiplicative decrease)
         self._cwnd = max(1, self._cwnd // 2)  # Ensure cwnd is at least 1
-        logging.debug("CWND: {}".format(self._cwnd))
+        logging.info("CWND: {}".format(self._cwnd))
         self._plotter.update_cwnd(self._cwnd)
 
         # Reset send time for unacknowledged packets
@@ -144,6 +144,7 @@ class Sender:
 
         # Resend the oldest unacknowledged packet
         oldest_unacknowledged = self._last_ack_recv + 1
+        logging.info("Resending after timeout")
         self._transmit(oldest_unacknowledged)
 
 
@@ -171,7 +172,7 @@ class Sender:
                 if (send_time != None and send_time != 0):
                     elapsed = recv_time - send_time
                     self._rtt = self._rtt * 0.9 + elapsed.total_seconds() * 0.1
-                    logging.debug("Updated RTT estimate: {}".format(self._rtt))
+                    logging.info("Updated RTT estimate: {}".format(self._rtt))
 
                 # Free slot
                 self._buf[slot] = None
@@ -217,7 +218,6 @@ class Sender:
             # Send next packet while packets are available and congestion window allows
             while  ((self._last_seq_sent < self._last_seq_written) and
                     (self._last_seq_sent - self._last_ack_recv < int(self._cwnd))):
-                logging.info("Transmitting Packets, Sequence Number :",_last_seq_sent + 1)
                 self._transmit(self._last_seq_sent + 1)
 
 class Receiver:
@@ -247,13 +247,13 @@ class Receiver:
             # Receive data packet
             raw = self._ll_endpoint.recv()
             packet = Packet.from_bytes(raw)
-            logging.debug("Received: {}".format(packet))
+            logging.info("Received: {}".format(packet))
 
             # Retransmit ACK, if necessary
             if (packet.seq_num <= self._last_ack_sent):
                 ack = Packet(PacketType.ACK, self._last_ack_sent)
                 self._ll_endpoint.send(ack.to_bytes())
-                logging.debug("Sent: {}".format(ack))
+                logging.info("Sent: {}".format(ack))
                 continue
 
             # Put data in buffer
@@ -282,13 +282,13 @@ class Receiver:
             self._last_ack_sent = ack_num
             ack = Packet(PacketType.ACK, self._last_ack_sent)
             self._ll_endpoint.send(ack.to_bytes())
-            logging.debug("Sent: {}".format(ack))
+            logging.info("Sent: {}".format(ack))
 
             # Logging for slow start
             if slow_start:
-                logging.debug("Entering slow start. Congestion window size: {}".format(ack_num))
+                logging.info("Entering slow start. Congestion window size: {}".format(ack_num))
             else:
-                logging.debug("Congestion avoidance phase. Congestion window size: {}".format(ack_num))
+                logging.info("Congestion avoidance phase. Congestion window size: {}".format(ack_num))
 
             # Check if slow start has ended
             if slow_start and ack_num >= 10:  # Adjust the threshold accordingly
